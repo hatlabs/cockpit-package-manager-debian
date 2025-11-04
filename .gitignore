@@ -1,0 +1,26 @@
+# Upstream source directory
+cockpit-package-manager/
+
+# Build artifacts
+*.deb
+*.dsc
+*.tar.*
+*.build
+*.buildinfo
+*.changes
+debian/.debhelper/
+debian/cockpit-packagemanager/
+debian/files
+debian/debhelper-build-stamp
+debian/*.log
+debian/*.substvars
+debian/tmp/
+
+# Editor files
+*.swp
+*~
+.vscode/
+.idea/
+
+# Build logs
+*.log

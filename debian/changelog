@@ -1,10 +1,18 @@
-cockpit-packagemanager (0.1.0-1) unstable; urgency=low
+cockpit-packagemanager (0.1.0-1) trixie; urgency=medium
 
   * Initial release
   * Package manager interface for Cockpit using PackageKit
-  * Support for browsing packages by Debian section
-  * Search functionality for packages
-  * Install and remove packages
-  * View package details and dependencies
+  * Features:
+    - Browse packages by PackageKit group (cross-distribution compatible)
+    - Group list with package counts and installed counts
+    - Package list view with search and filtering
+    - Detailed package view with dependencies and file lists
+    - Install/remove operations with progress tracking
+  * Technical implementation:
+    - React 18 + TypeScript for UI
+    - PatternFly 6 components
+    - Comprehensive PackageKit D-Bus integration
+    - 79 unit tests with full coverage
+  * Designed for HaLOS and other Debian-based systems
 
- -- Matti Airas <matti.airas@hatlabs.fi>  Mon, 04 Nov 2025 20:00:00 +0200
+ -- Matti Airas <matti.airas@hatlabs.fi>  Mon, 04 Nov 2025 21:00:00 +0200

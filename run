@@ -1,0 +1,173 @@
+#!/usr/bin/env bash
+#
+# usage: ./run command [argument ...]
+#
+# Commands used during development / CI.
+#
+
+set -o nounset
+set -o pipefail
+set -o errexit
+
+# Change the current directory to the project root.
+PROJECT_ROOT=${0%/*}
+if [[ $0 != $PROJECT_ROOT && $PROJECT_ROOT != "" ]]; then
+  cd "$PROJECT_ROOT"
+fi
+readonly PROJECT_ROOT=$(pwd)
+
+# Store the absolute path to this script (useful for recursion).
+readonly SCRIPT="$PROJECT_ROOT/$(basename "$0")"
+
+################################################################################
+# Core Commands
+
+function release:version {
+  #@ Show current project version
+  #@ Category: Core
+  # Extract version from debian/changelog
+  dpkg-parsechangelog -S Version | cut -d- -f1
+}
+
+################################################################################
+# Setup Commands
+
+function setup:check {
+  #@ Check if source directory symlink exists
+  #@ Category: Setup
+  if [ ! -L "cockpit-package-manager" ]; then
+    echo "❌ cockpit-package-manager symlink not found"
+    echo "   The symlink should point to ../cockpit-package-manager"
+    echo "   Run: ln -s ../cockpit-package-manager cockpit-package-manager"
+    return 1
+  fi
+
+  if [ ! -d "cockpit-package-manager" ]; then
+    echo "❌ cockpit-package-manager source directory not found"
+    echo "   Make sure ../cockpit-package-manager exists"
+    return 1
+  fi
+
+  echo "✅ Source directory link is valid"
+  return 0
+}
+
+################################################################################
+# Package Management Commands
+
+function package:deb {
+  #@ Build Debian package (same as package:deb:docker)
+  #@ Category: Package Management
+  package:deb:docker
+}
+
+function package:deb:docker {
+  #@ Build Debian package using Docker container
+  #@ Category: Package Management
+
+  setup:check
+
+  echo "🐳 Building Debian package using Docker..."
+
+  docker compose -f docker/docker-compose.debtools.yml run --rm debtools dpkg-buildpackage -us -uc -b
+
+  echo "✅ Docker-based Debian package built successfully"
+  echo ""
+  echo "Package file(s):"
+  ls -lh ../*.deb 2>/dev/null || echo "  No .deb files found in parent directory"
+}
+
+function package:docker:build {
+  #@ Build Docker tools image
+  #@ Category: Package Management
+  docker compose -f docker/docker-compose.debtools.yml build debtools "$@"
+}
+
+function package:clean {
+  #@ Clean build artifacts
+  #@ Category: Package Management
+  echo "🧹 Cleaning build artifacts..."
+
+  rm -rf debian/.debhelper/
+  rm -rf debian/cockpit-packagemanager/
+  rm -f debian/files
+  rm -f debian/debhelper-build-stamp
+  rm -f debian/*.log
+  rm -f debian/*.substvars
+  rm -rf debian/tmp/
+
+  # Clean built packages
+  rm -f ../*.deb
+  rm -f ../*.buildinfo
+  rm -f ../*.changes
+
+  # Clean source build artifacts if present
+  if [ -d "cockpit-package-manager" ]; then
+    cd cockpit-package-manager
+    rm -rf node_modules/
+    rm -f packagemanager/packagemanager.js
+    rm -f packagemanager/packagemanager.js.map
+    rm -f packagemanager/packagemanager.css
+    rm -f packagemanager/packagemanager.css.map
+    cd ..
+  fi
+
+  echo "✅ Cleanup complete"
+}
+
+################################################################################
+# Help System
+
+function help {
+  #@ Show this help message
+  #@ Category: Core
+  echo "Cockpit Package Manager - Debian Packaging"
+  echo "==========================================="
+  echo ""
+  echo "Available commands:"
+  echo ""
+
+  # Extract function definitions and their help comments
+  awk '/^function / {
+    fname = $2
+    sub(/[({].*/, "", fname)
+    getline
+    if ($0 ~ /#@/) {
+      desc = $0
+      sub(/.*#@ /, "", desc)
+      sub(/ *$/, "", desc)
+      getline
+      if ($0 ~ /#@ Category:/) {
+        cat = $0
+        sub(/.*Category: /, "", cat)
+        sub(/ *$/, "", cat)
+        if (!seen[cat]++) categories[++cat_count] = cat
+        commands[cat, ++cmd_count[cat]] = fname
+        descriptions[cat, cmd_count[cat]] = desc
+      }
+    }
+  }
+  END {
+    for (i = 1; i <= cat_count; i++) {
+      cat = categories[i]
+      print "\n" cat ":"
+      for (j = 1; j <= cmd_count[cat]; j++) {
+        printf "  %-30s %s\n", commands[cat, j], descriptions[cat, j]
+      }
+    }
+  }' "$0"
+
+  echo ""
+  echo "Usage: ./run <command> [arguments...]"
+  echo ""
+  echo "Quick start:"
+  echo "  1. ./run setup:check           # Verify source directory link"
+  echo "  2. ./run package:deb:docker    # Build package in Docker"
+  echo "  3. ./run package:clean         # Clean build artifacts"
+}
+
+################################################################################
+# Commands end.
+
+TIMEFORMAT=$'\nTask completed in %3lR'
+time "${@:-help}"

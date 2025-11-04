@@ -1,0 +1,8 @@
+services:
+  debtools:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.debtools
+    volumes:
+      - ..:/build
+    working_dir: /build
