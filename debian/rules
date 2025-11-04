@@ -1,0 +1,10 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	cd cockpit-package-manager && npm install && npm run build
+
+override_dh_auto_clean:
+	cd cockpit-package-manager && rm -rf node_modules packagemanager/packagemanager.js packagemanager/packagemanager.js.map

@@ -1,0 +1,10 @@
+cockpit-packagemanager (0.1.0-1) unstable; urgency=low
+
+  * Initial release
+  * Package manager interface for Cockpit using PackageKit
+  * Support for browsing packages by Debian section
+  * Search functionality for packages
+  * Install and remove packages
+  * View package details and dependencies
+
+ -- Matti Airas <matti.airas@hatlabs.fi>  Mon, 04 Nov 2025 20:00:00 +0200

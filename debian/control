@@ -1,0 +1,21 @@
+Source: cockpit-packagemanager
+Section: admin
+Priority: optional
+Maintainer: Matti Airas <matti.airas@hatlabs.fi>
+Build-Depends: debhelper-compat (= 13), nodejs, npm
+Standards-Version: 4.6.0
+Homepage: https://github.com/hatlabs/cockpit-package-manager
+
+Package: cockpit-packagemanager
+Architecture: all
+Depends: ${misc:Depends}, cockpit (>= 276), packagekit
+Description: Cockpit-based package manager using PackageKit
+ A web-based package manager interface for Cockpit that provides:
+  - Browse packages by Debian section
+  - Search for packages by name or description
+  - View detailed package information
+  - Install and remove packages
+  - View package dependencies
+ .
+ This package provides a modern, user-friendly interface for managing
+ system packages through Cockpit's web interface.
