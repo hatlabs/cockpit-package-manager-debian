@@ -7,4 +7,6 @@ override_dh_auto_build:
 	cd cockpit-package-manager && npm install && npm run build
 
 override_dh_auto_clean:
-	cd cockpit-package-manager && rm -rf node_modules packagemanager/packagemanager.js packagemanager/packagemanager.js.map
+	if [ -d "cockpit-package-manager" ]; then \
+		cd cockpit-package-manager && rm -rf node_modules packagemanager/packagemanager.js packagemanager/packagemanager.js.map packagemanager/packagemanager.css packagemanager/packagemanager.css.map; \
+	fi
