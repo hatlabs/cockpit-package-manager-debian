@@ -22,7 +22,7 @@ if [ ! -f "VERSION" ]; then
 fi
 
 # Read upstream version from VERSION file
-UPSTREAM_VERSION=$(cat VERSION | tr -d '[:space:]')
+UPSTREAM_VERSION=$(tr -d '[:space:]' < VERSION)
 echo "Upstream version: $UPSTREAM_VERSION" >&2
 
 # Find the next available revision number by checking existing releases

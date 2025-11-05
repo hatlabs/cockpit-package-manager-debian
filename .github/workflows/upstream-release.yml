@@ -34,7 +34,7 @@ jobs:
         id: current-version
         run: |
           if [ -f VERSION ]; then
-            CURRENT_VERSION=$(cat VERSION | tr -d '[:space:]')
+            CURRENT_VERSION=$(tr -d '[:space:]' < VERSION)
             echo "Current tracked version: $CURRENT_VERSION"
             echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           else
@@ -71,7 +71,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           LATEST_VERSION="${{ steps.upstream-version.outputs.version }}"
-          BRANCH_NAME="update-cockpit-package-manager-${LATEST_VERSION//[:+~.]/-}"
+          BRANCH_NAME="update-cockpit-package-manager-${LATEST_VERSION//[.:+~]/-}"
 
           # Configure git
           git config user.name "github-actions[bot]"
