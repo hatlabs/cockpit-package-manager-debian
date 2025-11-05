@@ -4,4 +4,5 @@ cockpit-package-manager/packagemanager/packagemanager.js usr/share/cockpit/packa
 cockpit-package-manager/packagemanager/packagemanager.js.map usr/share/cockpit/packagemanager/
 cockpit-package-manager/packagemanager/packagemanager.css usr/share/cockpit/packagemanager/
 cockpit-package-manager/packagemanager/packagemanager.css.map usr/share/cockpit/packagemanager/
+cockpit-package-manager/packagemanager/styles.css usr/share/cockpit/packagemanager/
 cockpit-package-manager/packagemanager/*.woff2 usr/share/cockpit/packagemanager/
