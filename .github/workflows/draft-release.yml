@@ -83,8 +83,8 @@ jobs:
         # dpkg-buildpackage creates .deb files in parent directory of build location
         # With docker-compose mounting ../.. to /workspace, files end up in $GITHUB_WORKSPACE/..
         echo "Looking for .deb files in parent directory..."
-        ls -la "$GITHUB_WORKSPACE"/../*.deb 2>/dev/null || echo "No .deb files found in parent"
-        cp "$GITHUB_WORKSPACE"/../*.deb packages/ 2>/dev/null || true
+        ls -la "$GITHUB_WORKSPACE"/.. | grep '\.deb' || echo "No .deb files found in parent"
+        cp "$GITHUB_WORKSPACE"/../*.deb packages/ 2>/dev/null
         ls -la packages/
         echo "Found packages:"
         if ls -1 packages/*.deb 1>/dev/null 2>&1; then
