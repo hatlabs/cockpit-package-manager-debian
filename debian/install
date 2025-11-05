@@ -6,4 +6,7 @@ cockpit-package-manager/packagemanager/packagemanager.js.map usr/share/cockpit/p
 cockpit-package-manager/packagemanager/packagemanager.css usr/share/cockpit/packagemanager/
 cockpit-package-manager/packagemanager/packagemanager.css.map usr/share/cockpit/packagemanager/
 cockpit-package-manager/packagemanager/styles.css usr/share/cockpit/packagemanager/
-cockpit-package-manager/packagemanager/*.woff2 usr/share/cockpit/packagemanager/
+cockpit-package-manager/packagemanager/RedHatDisplay usr/share/cockpit/packagemanager/
+cockpit-package-manager/packagemanager/RedHatMono usr/share/cockpit/packagemanager/
+cockpit-package-manager/packagemanager/RedHatText usr/share/cockpit/packagemanager/
+cockpit-package-manager/packagemanager/webfonts usr/share/cockpit/packagemanager/
