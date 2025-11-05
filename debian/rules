@@ -5,6 +5,11 @@
 
 override_dh_auto_build:
 	cd cockpit-package-manager && npm install && npm run build
+	# Work around Docker for Mac bind mount caching by copying from /tmp
+	# The CSS file is written correctly in the container but may be read as stale from bind mount
+	if [ -f /tmp/packagemanager.css ]; then \
+		cp /tmp/packagemanager.css cockpit-package-manager/packagemanager/packagemanager.css; \
+	fi
 
 override_dh_auto_clean:
 	if [ -d "cockpit-package-manager" ]; then \
