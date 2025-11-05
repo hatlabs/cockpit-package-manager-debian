@@ -1,4 +1,4 @@
-Source: cockpit-packagemanager
+Source: cockpit-package-manager
 Section: admin
 Priority: optional
 Maintainer: Matti Airas <matti.airas@hatlabs.fi>
@@ -6,7 +6,7 @@ Build-Depends: debhelper-compat (= 13), nodejs, npm
 Standards-Version: 4.6.0
 Homepage: https://github.com/hatlabs/cockpit-package-manager
 
-Package: cockpit-packagemanager
+Package: cockpit-package-manager
 Architecture: all
 Depends: ${misc:Depends}, cockpit (>= 276), packagekit
 Description: Cockpit-based package manager using PackageKit

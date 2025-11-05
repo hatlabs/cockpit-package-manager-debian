@@ -4,5 +4,5 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.debtools
     volumes:
-      - ..:/build
-    working_dir: /build
+      - ../..:/workspace
+    working_dir: /workspace/cockpit-package-manager-debian

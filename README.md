@@ -40,7 +40,7 @@ ls ../*.deb
 
 ## Package Details
 
-- **Package name**: cockpit-packagemanager
+- **Package name**: cockpit-package-manager
 - **Architecture**: all (JavaScript/TypeScript, platform independent)
 - **Dependencies**:
   - cockpit (>= 276)
@@ -66,7 +66,7 @@ Follow semantic versioning:
 
 ```bash
 # Install the package
-sudo dpkg -i cockpit-packagemanager_0.1.0-1_all.deb
+sudo dpkg -i cockpit-package-manager_0.1.0-1_all.deb
 
 # If dependencies are missing, fix with:
 sudo apt-get install -f
@@ -75,7 +75,7 @@ sudo apt-get install -f
 # Open http://localhost:9090 and look for "Package Manager" in the menu
 
 # Remove the package
-sudo apt-get remove cockpit-packagemanager
+sudo apt-get remove cockpit-package-manager
 ```
 
 ## Integration with HaLOS

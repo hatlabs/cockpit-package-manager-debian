@@ -1,4 +1,4 @@
-cockpit-packagemanager (0.1.0-1) trixie; urgency=medium
+cockpit-package-manager (0.1.0-1) trixie; urgency=medium
 
   * Initial release
   * Package manager interface for Cockpit using PackageKit
