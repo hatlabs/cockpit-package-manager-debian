@@ -1,0 +1,152 @@
+name: Upstream Release
+
+on:
+  repository_dispatch:
+    types: [upstream-release]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-update-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract version from payload
+        id: upstream-version
+        run: |
+          VERSION="${{ github.event.client_payload.version }}"
+          TAG_NAME="${{ github.event.client_payload.tag_name }}"
+          RELEASE_URL="${{ github.event.client_payload.release_url }}"
+
+          echo "Upstream version: $VERSION"
+          echo "Upstream tag: $TAG_NAME"
+          echo "Release URL: $RELEASE_URL"
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
+
+      - name: Read current VERSION file
+        id: current-version
+        run: |
+          if [ -f VERSION ]; then
+            CURRENT_VERSION=$(cat VERSION | tr -d '[:space:]')
+            echo "Current tracked version: $CURRENT_VERSION"
+            echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION file not found, will create it"
+            echo "version=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Compare versions
+        id: compare
+        run: |
+          LATEST="${{ steps.upstream-version.outputs.version }}"
+          CURRENT="${{ steps.current-version.outputs.version }}"
+
+          if [ -z "$CURRENT" ]; then
+            echo "needs_update=true" >> $GITHUB_OUTPUT
+            echo "VERSION file missing, needs creation"
+          elif [ "$LATEST" = "$CURRENT" ]; then
+            echo "needs_update=false" >> $GITHUB_OUTPUT
+            echo "Versions match, no update needed"
+          else
+            # Simple version comparison (works for most semver)
+            if [ "$(printf '%s\n' "$LATEST" "$CURRENT" | sort -V | tail -n1)" = "$LATEST" ] && [ "$LATEST" != "$CURRENT" ]; then
+              echo "needs_update=true" >> $GITHUB_OUTPUT
+              echo "New version available: $LATEST > $CURRENT"
+            else
+              echo "needs_update=false" >> $GITHUB_OUTPUT
+              echo "Current version is up to date or newer"
+            fi
+          fi
+
+      - name: Create Pull Request
+        if: steps.compare.outputs.needs_update == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST_VERSION="${{ steps.upstream-version.outputs.version }}"
+          BRANCH_NAME="update-cockpit-package-manager-${LATEST_VERSION//[:+~.]/-}"
+
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create new branch
+          git checkout -b "$BRANCH_NAME"
+
+          # Update VERSION file
+          echo "$LATEST_VERSION" > VERSION
+          git add VERSION
+
+          # Commit changes
+          git commit -m "chore: update cockpit-package-manager to $LATEST_VERSION"
+
+          # Push branch
+          git push origin "$BRANCH_NAME"
+
+          LATEST_TAG="${{ steps.upstream-version.outputs.tag }}"
+          RELEASE_URL="${{ steps.upstream-version.outputs.release_url }}"
+
+          # Create PR
+          gh pr create \
+            --title "chore: update cockpit-package-manager to $LATEST_VERSION" \
+            --body "$(cat <<EOF
+          ## Cockpit Package Manager Version Update
+
+          This PR updates the cockpit-package-manager package version to track the latest release from the upstream repository.
+
+          **New Version:** \`$LATEST_VERSION\`
+          **Previous Version:** \`${{ steps.current-version.outputs.version }}\`
+
+          ### Details
+
+          - **Upstream Repository:** [hatlabs/cockpit-package-manager](https://github.com/hatlabs/cockpit-package-manager)
+          - **Release Page:** [$LATEST_TAG]($RELEASE_URL)
+
+          ### What happens after merge?
+
+          1. The \`draft-release.yml\` workflow will automatically run
+          2. It will update \`debian/changelog\` with the new version
+          3. Build and test the Debian package
+          4. Create a draft release with the .deb package attached
+
+          ### Testing
+
+          To test this version locally:
+
+          \`\`\`bash
+          # Checkout this branch
+          git fetch origin $BRANCH_NAME
+          git checkout $BRANCH_NAME
+
+          # Clone upstream at new version
+          git clone https://github.com/hatlabs/cockpit-package-manager.git
+          cd cockpit-package-manager
+          git checkout $LATEST_TAG
+          cd ..
+
+          # Build package
+          ./run package:deb:docker
+
+          # Test installation
+          sudo dpkg -i cockpit-package-manager_${LATEST_VERSION}-1_all.deb
+          \`\`\`
+
+          Please verify:
+          - [ ] VERSION file is correctly updated
+          - [ ] Upstream release notes reviewed
+          - [ ] Package builds successfully (automatic via CI)
+          - [ ] Package installs and works correctly
+
+          ---
+          🤖 This PR was automatically created when upstream version $LATEST_TAG was published.
+          EOF
+          )" \
+            --base main \
+            --head "$BRANCH_NAME"

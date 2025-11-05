@@ -1,0 +1,158 @@
+name: Build and Draft Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for git log
+        fetch-tags: true  # Fetch tags for comparing releases
+
+    - name: Clone upstream source
+      run: |
+        # Clone upstream repository if not present
+        if [ ! -d "cockpit-package-manager" ]; then
+          echo "Cloning upstream repository..."
+          git clone https://github.com/hatlabs/cockpit-package-manager.git
+        else
+          echo "Upstream repository already present"
+        fi
+
+    - name: Calculate version
+      id: version
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        PACKAGE_VERSION=$(./scripts/generate-changelog.sh)
+        echo "version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+        echo "Calculated version: $PACKAGE_VERSION"
+
+        echo "Generated debian/changelog:"
+        cat debian/changelog
+
+    - name: Check if release exists and if it's published
+      id: check_release
+      run: |
+        if gh release view "v${{ steps.version.outputs.version }}" &>/dev/null; then
+          # Release exists, check if it's a draft
+          IS_DRAFT=$(gh release view "v${{ steps.version.outputs.version }}" --json isDraft --jq '.isDraft')
+          if [ "$IS_DRAFT" = "true" ]; then
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "delete_existing=true" >> $GITHUB_OUTPUT
+            echo "Existing draft release found - will delete and recreate"
+          else
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "delete_existing=false" >> $GITHUB_OUTPUT
+            echo "Published release v${{ steps.version.outputs.version }} already exists - skipping"
+          fi
+        else
+          echo "skip=false" >> $GITHUB_OUTPUT
+          echo "delete_existing=false" >> $GITHUB_OUTPUT
+          echo "No existing release found"
+        fi
+      env:
+        GH_TOKEN: ${{ github.token }}
+
+    - name: Delete existing draft release
+      if: steps.check_release.outputs.delete_existing == 'true'
+      run: |
+        echo "Deleting existing draft release v${{ steps.version.outputs.version }}"
+        gh release delete "v${{ steps.version.outputs.version }}" --yes
+      env:
+        GH_TOKEN: ${{ github.token }}
+
+    - name: Build package
+      if: steps.check_release.outputs.skip == 'false'
+      run: |
+        # Use the CI-specific package build function
+        ./run package:deb:docker:ci
+
+    - name: Collect built packages
+      if: steps.check_release.outputs.skip == 'false'
+      run: |
+        mkdir -p packages
+        # Find .deb files in workspace (dpkg-buildpackage creates them in parent)
+        find "$GITHUB_WORKSPACE" -name "*.deb" -exec cp {} packages/ \; 2>/dev/null
+        ls -la packages/
+        echo "Found packages:"
+        if ls -1 packages/*.deb 1>/dev/null 2>&1; then
+          ls -1 packages/*.deb
+        else
+          echo "No packages found"
+        fi
+
+    - name: Create draft release
+      if: steps.check_release.outputs.skip == 'false'
+      run: |
+        # Read upstream version from VERSION file
+        UPSTREAM_VERSION=$(cat VERSION)
+
+        # Get the latest published release tag to compare commits
+        LAST_TAG=$(gh release list --limit 100 --json tagName,isPrerelease,isDraft --jq '.[] | select(.isDraft == false and .isPrerelease == false) | .tagName' | head -n1)
+
+        if [ -n "$LAST_TAG" ]; then
+          echo "Generating changelog since $LAST_TAG"
+          # Get commits since last release
+          CHANGELOG_COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:"- %s" --no-merges)
+        else
+          echo "No previous releases found, using recent commits"
+          # Get last 10 commits if no previous release
+          CHANGELOG_COMMITS=$(git log -10 --pretty=format:"- %s" --no-merges)
+        fi
+
+        # Create release notes
+        cat > release_notes.md <<EOF
+        ## Cockpit Package Manager v${{ steps.version.outputs.version }}
+
+        This release packages Cockpit Package Manager v${UPSTREAM_VERSION} as a Debian package for easy installation on Debian-based systems.
+
+        ### Changes
+
+        ${CHANGELOG_COMMITS}
+
+        ### Installation
+
+        Download the .deb package and install with:
+
+        \`\`\`bash
+        sudo dpkg -i cockpit-package-manager_${{ steps.version.outputs.version }}_all.deb
+        sudo apt-get install -f  # Install any missing dependencies
+        \`\`\`
+
+        After installation, access Cockpit at \`https://your-host:9090\` and find "Package Manager" in the sidebar.
+
+        ### What's Included
+
+        - Cockpit Package Manager v${UPSTREAM_VERSION}
+        - Web-based package management interface using PackageKit
+        - Browse packages by Debian software groups
+        - Search functionality across all packages
+        - Install and remove packages with progress tracking
+        - Dark mode support
+        - Accessible interface with keyboard navigation
+
+        ### Requirements
+
+        - Cockpit >= 276
+        - PackageKit
+        - Debian Trixie or compatible system
+        EOF
+
+        # Create the release with the .deb package attached
+        gh release create "v${{ steps.version.outputs.version }}" \
+          --draft \
+          --title "v${{ steps.version.outputs.version }}" \
+          --notes-file release_notes.md \
+          packages/*.deb
+
+        echo "Created draft release v${{ steps.version.outputs.version }} with packages"
+      env:
+        GH_TOKEN: ${{ github.token }}

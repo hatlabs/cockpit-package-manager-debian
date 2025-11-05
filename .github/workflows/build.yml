@@ -1,0 +1,51 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Validate package builds on PRs (artifacts not used - fresh build on merge)
+  validate-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Clone upstream source
+      run: |
+        # Clone upstream repository if not present
+        if [ ! -d "cockpit-package-manager" ]; then
+          echo "Cloning upstream repository..."
+          git clone https://github.com/hatlabs/cockpit-package-manager.git
+        else
+          echo "Upstream repository already present"
+        fi
+
+    - name: Auto-increment version and update changelog
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        PACKAGE_VERSION=$(./scripts/generate-changelog.sh)
+        echo "Package version will be: $PACKAGE_VERSION"
+
+        echo "Generated debian/changelog:"
+        cat debian/changelog
+
+    - name: Read version from debian/changelog
+      id: version
+      run: |
+        # Extract version from first line of debian/changelog (includes Debian revision)
+        VERSION=$(dpkg-parsechangelog -S Version)
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Found version: $VERSION"
+
+    - name: Build package
+      run: |
+        # Use the CI-specific package build function
+        ./run package:deb:docker:ci
+
+    - name: Verify package was built
+      run: |
+        # Just verify the package exists (no need to upload - will rebuild on merge)
+        find "$GITHUB_WORKSPACE" -name "*.deb" | head -1 || (echo "ERROR: No .deb package found!" && exit 1)
+        echo "✅ Package build successful"
