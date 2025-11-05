@@ -72,8 +72,9 @@ jobs:
     - name: Build package
       if: steps.check_release.outputs.skip == 'false'
       run: |
-        # Use the CI-specific package build function
-        ./run package:deb:docker:ci
+        # Build directly with docker compose (bypass symlink check in ./run)
+        echo "🐳 Building Debian package using Docker..."
+        docker compose -f docker/docker-compose.debtools.yml run --rm debtools dpkg-buildpackage -us -uc -b
 
     - name: Collect built packages
       if: steps.check_release.outputs.skip == 'false'
