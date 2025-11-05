@@ -9,7 +9,7 @@ cockpit-package-manager/
 *.buildinfo
 *.changes
 debian/.debhelper/
-debian/cockpit-packagemanager/
+debian/cockpit-package-manager/
 debian/files
 debian/debhelper-build-stamp
 debian/*.log
@@ -24,3 +24,6 @@ debian/tmp/
 
 # Build logs
 *.log
+
+# Local memory files
+CLAUDE.local.md

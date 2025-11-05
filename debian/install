@@ -2,3 +2,6 @@ cockpit-package-manager/packagemanager/index.html usr/share/cockpit/packagemanag
 cockpit-package-manager/packagemanager/manifest.json usr/share/cockpit/packagemanager/
 cockpit-package-manager/packagemanager/packagemanager.js usr/share/cockpit/packagemanager/
 cockpit-package-manager/packagemanager/packagemanager.js.map usr/share/cockpit/packagemanager/
+cockpit-package-manager/packagemanager/packagemanager.css usr/share/cockpit/packagemanager/
+cockpit-package-manager/packagemanager/packagemanager.css.map usr/share/cockpit/packagemanager/
+cockpit-package-manager/packagemanager/*.woff2 usr/share/cockpit/packagemanager/
