@@ -2,9 +2,15 @@
 
 Debian packaging repository for cockpit-package-manager.
 
+## Upstream Source
+
+**Repository**: https://github.com/hatlabs/cockpit-package-manager
+
+Cockpit-based package manager using PackageKit, inspired by Raspberry Pi's Add/Remove Software.
+
 ## Purpose
 
-This repository contains only Debian packaging files for building .deb packages of cockpit-package-manager. The upstream source is maintained separately in the `cockpit-package-manager/` directory.
+This repository contains only Debian packaging files for building .deb packages of cockpit-package-manager. The upstream source is maintained at [hatlabs/cockpit-package-manager](https://github.com/hatlabs/cockpit-package-manager).
 
 ## Structure
 
@@ -19,13 +25,19 @@ This repository contains only Debian packaging files for building .deb packages 
 
 ## Building
 
-The build process expects the upstream source to be in `cockpit-package-manager/` directory (sibling to this repo):
+The build process expects the upstream source to be available as `cockpit-package-manager/` (either a symlink or cloned repository):
 
 ```bash
-# From the halos-distro workspace root
-cd cockpit-package-manager-debian
+# Clone the upstream repository (if not already present)
+git clone https://github.com/hatlabs/cockpit-package-manager.git
 
-# Build the package
+# Or create a symlink to an existing checkout
+# ln -s ../cockpit-package-manager cockpit-package-manager
+
+# Build using Docker (recommended)
+./run package:deb:docker
+
+# Or build natively (requires Debian/Ubuntu with build dependencies)
 dpkg-buildpackage -us -uc -b
 
 # Package will be created in parent directory
